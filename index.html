@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.node circle {
+  fill: #99;
+}
+
+.node text {
+  font: 15.0px sans-serif;
+
+}
+
+.node text2 {
+  font: 15.0px sans-serif;
+  font-weight: bold;
+}
+
+.node--internal circle {
+  fill: #555;
+}
+
+.node--internal text {
+  text-shadow: 0 4px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+}
+
+.link1 {
+  fill: none;
+  stroke-opacity: 0.4;
+  stroke-width: 2.2px;
+}
+
+.link2 {
+  fill: none;
+  stroke-opacity: 0.4;
+  stroke-width: 2.2px;
+  stroke-dasharray: 2;
+}
+
+
+
+#download{
+    cursor: pointer;
+    text-decoration: none;
+    color: black;
+}
+
+.hm {
+
+ font: 5.0px sans-serif;
+
+}
+
+.r {
+color: red;
+}
+</style>
+<!--<div class = "hm"> Metabolites/metals with <span class = "r"> higher LEVELS </span> among pregnant women in the PROTECT </br> cohort as compared to the US population (meaning compared to NHANES) </div> -->
+<svg width="1400" height="1200"></svg>
+<a href="#" id="download">Download</a>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+ var urines = 
+ ['Mother.Biomonitoring.Urine',
+'Mother.Biomonitoring.Urine.PAH',
+'Mother.Biomonitoring.Urine.Metals',
+'Mother.Biomonitoring.Urine.P',
+ ];
+
+  var blods = 
+ ['Mother.Biomonitoring.Blood',
+'Mother.Biomonitoring.Blood.H',
+'Mother.Biomonitoring.Blood.Metals',
+'Mother.Biomonitoring.Blood.In',
+ ];
+ 
+ var tapwaters = 
+ ['Mother.Environmental Monitoring.Tap/treated Water',
+ 'Mother.Environmental Monitoring.Tap/treated Water.W',
+ 'Mother.Environmental Monitoring.Tap/treated Water.T',
+ 'Mother.Environmental Monitoring.Tap/treated Water.C',
+ 'Mother.Environmental Monitoring.Tap/treated Water.P' ]
+ 
+  var supers = 
+ ['Mother.Environmental Monitoring.Superfund',
+ 'Mother.Environmental Monitoring.Superfund.R',
+ 'Mother.Environmental Monitoring.Superfund.M',
+ 'Mother.Environmental Monitoring.Superfund.H']
+ 
+ 
+ 
+ //this section  is setting up the SVG "canvas" 
+ 
+ 
+var svg = d3.select("svg"),
+    width = +svg.attr("width"),
+    height = +svg.attr("height"),
+    g = svg.append("g").attr("transform", "translate(" + (width / 2 - 15) + "," + (height / 2 ) + ")");
+
+	
+// stratify the data - i.e. turn it into tree/hiarchical form 	
+var stratify = d3.stratify()
+    .parentId(function(d) { 
+	//console.log(d.id.substring(0, d.id.lastIndexOf(".")));
+	return d.id.substring(0, d.id.lastIndexOf(".")); });
+
+	
+var tree = d3.cluster()
+tree.size([360, 330])
+tree.separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / 5; });
+
+
+d3.csv("flare.csv", function(error, data) {
+  if (error) throw error;
+
+  var root = tree(stratify(data)
+      .sort(function(a, b) { return (a.height - b.height + 100) || a.id.localeCompare(b.id); }));
+
+  var link = g.selectAll(".link")
+    .data(root.descendants().slice(1))
+    .enter().append("path")
+      .attr("class", function(d) {
+	  
+		if (d.id.startsWith("Mother.Experimental")) {
+			return "link2";
+			}
+		else {
+		return "link1";
+		}
+	  })
+	  .style("fill", "none")
+      .attr("d", curve);
+
+ function elbow(d, i) {
+
+  return "M" + d.parent.y + "," + d.parent.x
+      + "V" + d.x + "H" + (d.y-0);
+}
+	function curve(d,i) {
+	  
+		if(d.depth < 2) {
+		 return "M" + project(d.x, d.y) 
+            + "C" + project2(d.x , (d.y + d.parent.y) / 2)
+            + " " + project2(d.parent.x, (d.y + d.parent.y) / 2)
+            + " " + project2(d.parent.x, d.parent.y);
+		}
+		if (d.depth >= 2) {
+        return "M" + project(d.x, d.y) 
+            + "C" + project(d.x , (d.y + d.parent.y) / 2)
+            + " " + project(d.parent.x, (d.y + d.parent.y) / 2)
+            + " " + project(d.parent.x, d.parent.y);
+			}
+      }  
+
+
+
+
+	
+	
+link.attr('stroke', function(d) {
+//urines
+
+
+for (var i = 0; i < urines.length;i++ ) {
+			if (d.id.startsWith(urines[i])){
+					  //console.log('here');
+					  //console.log(d);
+					  return "#bc960d";
+					} 
+		};
+	
+//blods
+for (var i = 0; i < blods.length;i++ ) {
+			if (d.id.startsWith(blods[i])){
+					  //console.log('here');
+					  //console.log(d);
+					  return "#9b1903";
+					} 
+		};
+
+//tapwaters
+for (var i = 0; i < tapwaters.length;i++ ) {
+			if (d.id.startsWith(tapwaters[i])){
+					  //console.log('here');
+					  //console.log(d);
+					  return "blue";
+					} 
+		};
+
+//supers
+for (var i = 0; i < supers.length;i++ ) {
+			if (d.id.startsWith(supers[i])){
+					  //console.log('here');
+					  //console.log(d);
+					  return "#72311b";
+					} 
+		};
+
+		// first level coloring
+	
+		if (d.id.startsWith("Mother.Environmental Monitoring")){
+          return "blue";
+        }
+		if (d.id.startsWith("Mother.Superfund")){
+          return "#4d2600";
+        }
+		if (d.id.startsWith("Mother.Experimental")){
+          return "#ad5803";
+        }
+		if (d.id.startsWith("Mother.Biomonitoring")){
+          return "#9b1903";
+        }
+		if (d.id.startsWith("Mother.Bi")){
+          return "#10A45E";
+        }
+		if (d.id.startsWith("Mother.Hea")){
+          return '#004d00';
+        }
+
+		 if (d.id.startsWith("Mother.Psychosocial")){
+          return '#2c5b68 ';
+        }
+		
+		//second level coloring
+		else return '#70f2ad';
+		
+		});
+		
+		
+		
+	/*link.attr('stroke-width', function(d) {
+	
+	for (var i = 0; i < namesx.length;i++ ) {
+			if (d.id.startsWith(namesx[i])){
+					  console.log('here');
+					  console.log(d);
+					  return "10.2px";
+					} 
+		};
+	}); */
+  var node = g.selectAll(".node")
+    .data(root.descendants())
+    .enter().append("g")
+      .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
+      .attr("transform", function(d) { return "translate(" + project(d.x, d.y) + ")"; });
+
+  node.append("circle")
+      .attr("r", function(d) { 
+	  console.log(d.value);
+	  if (d.id == "Mother") return 2.4;
+	  else return 2.0;
+	  } )
+	  .style('fill', function(d) { 
+	   
+	//urines
+for (var i = 0; i < urines.length;i++ ) {
+			if (d.id.startsWith(urines[i])){
+					 //console.log('here');
+					  //console.log(d);
+					  return "#bc960d";
+					} 
+		};
+	
+//blods
+for (var i = 0; i < blods.length;i++ ) {
+			if (d.id.startsWith(blods[i])){
+					  //console.log('here');
+					  //console.log(d);
+					  return "#9b1903";
+					} 
+		};
+
+//tapwaters
+
+for (var i = 0; i < tapwaters.length;i++ ) {
+			if (d.id.startsWith(tapwaters[i])){
+					  //console.log('here');
+					  //console.log(d);
+					  return "blue";
+					} 
+		};
+
+//supers
+
+for (var i = 0; i < supers.length;i++ ) {
+			if (d.id.startsWith(supers[i])){
+					  //console.log('here');
+					  //console.log(d);
+					  return "#72311b";
+					} 
+		};
+		
+	   
+	   if (d.id.startsWith("Mother.Biomonitoring")){
+          return "#9b1903";
+        }
+		
+		if (d.id.startsWith("Mother.Biomonitoring.Bood")){
+          return "#ff3300";
+        }
+		
+		if (d.id.startsWith("Mother.Environmental Monitoring")){
+          return "blue";
+        }
+	   if (d.id.startsWith("Mother.Biomonitoring")){
+          return "#386eff";
+        }
+		
+		if (d.id.startsWith("Mother.Superfund")){
+          return "#331a00";
+        }
+		
+		if (d.id.startsWith("Mother.Experimental")){
+          return "#ad5803";
+        }
+		
+		if (d.id.startsWith("Mother.Bi")){
+          return "#10A45E";
+        }
+		 if (d.id.startsWith("Mother.Hea")){
+          return '#004d00';
+        }
+				 if (d.id.startsWith("Mother.Psychosocial")){
+          return '#2c5b68 ';
+        }
+
+	  d.color = 'red';
+	  
+	  return d.color});
+	  
+  node.append("text")
+      .attr("dy", ".1em")
+      .attr("x", function(d) { return d.x < 180 === !d.children ? 6 : -6; })
+      .style("text-anchor", function(d) { return d.x < 180 === !d.children ? "start" : "end"; })
+      .attr("transform", function(d) { return "rotate(" + (d.x < 180 ? d.x - 90 : d.x + 90) + ")"; })
+      .text(function(d) { 
+	  
+	  
+	  return d.id.substring(d.id.lastIndexOf(".") + 1); });
+	  
+var text = d3.selectAll("text");
+
+// text color
+
+
+ 
+//text.style("fill", function(d) {
+
+//		for (var i = 0; i < namesx.length;i++ ) {
+//			if (d.id.startsWith(namesx[i])){
+//					  return "red";
+//					} 
+//		};
+	
+ 
+//});
+		
+//text size
+
+//console.log(("str1,str2,str3,str4".match(new RegExp("str", "g")) || []).length); //logs 4
+
+text.style("font-size", function(d) {
+  if (d.id.startsWith("Mother.Envionme")){
+          
+		  return "43";
+        }
+  if (d.id.startsWith("Mother.Envionment.Environmental.Phthalates.DBP")){
+          //console.log(d.id);
+		  return "13";
+        }
+});
+
+ var namesnotbold = 
+ ['Mother.Environmental Monitoring.Superfund',
+ 'Mother.Environmental Monitoring.Superfund.R',
+ 'Mother.Environmental Monitoring.Superfund.M',
+ 'Mother.Environmental Monitoring.Superfund.H']
+
+ 
+
+ 
+text.style("font-weight", function(d) {
+	// instert here conditional for Health measures and Experomental Models
+	
+	if  (d.id.startsWith("Mother.Health") || d.id.startsWith("Mother.Exp") || d.id.startsWith("Mother.Psychosocial")) {
+	if (((d.id.match(/\./g) || []).length) <= 2  ){
+			  return "bold";
+			}
+	
+	}
+	else {
+	//console.log('font-weight')
+	//console.log((d.id.match(/\./g) || []))
+	  if (((d.id.match(/\./g) || []).length) <= 3  ){
+			  return "bold";
+			}
+			
+			}
+	  
+});
+
+
+
+text.style("font-size", function(d) {
+	// instert here conditional for Health measures and Experomental Models
+	
+	if  (d.id.startsWith("Mother.Health") || d.id.startsWith("Mother.Exp") || d.id.startsWith("Mother.Psychosocial")) {
+	if (((d.id.match(/\./g) || []).length) >= 3  ){
+			  return "10pt";
+			}
+	
+	}
+	else {
+	//console.log('font-weight')
+	//console.log((d.id.match(/\./g) || []))
+	  if (((d.id.match(/\./g) || []).length) >= 4  ){
+			  return "10pt";
+			}
+			
+			}
+	  
+});
+
+
+});
+
+function project2(x, y) {
+  var angle = (x - 90) / 180 * Math.PI;
+ 
+ 
+  var radius = y;
+  var scalar = 0.2;
+  return [scalar * radius * Math.cos(angle), scalar * radius * Math.sin(angle)];
+}
+
+function project(x, y) {
+  var angle = (x - 90) / 180 * Math.PI;
+
+  var radius = y;
+  // this scales the radius in or out
+  var scalar = 1.2;
+  return [scalar * radius * Math.cos(angle), scalar * radius * Math.sin(angle)];
+}
+
+d3.select("#download")
+    .on("mouseover", writeDownloadLink);
+
+
+//d3.selectAll('.link').each(function() {
+ // var that = d3.select(this);
+ // ['stroke', 'stroke-width', 'opacity', 'fill'].forEach(function(property) {
+ //   that.style(property, that.style(property))
+	
+ // });
+//});
+	
+function writeDownloadLink(){
+    var html = d3.select("svg")
+        .attr("title", "svg_title")
+        .attr("version", 1.1)
+        .attr("xmlns", "http://www.w3.org/2000/svg")
+        .node().parentNode.innerHTML;
+    
+    d3.select(this)
+        .attr("href-lang", "image/svg+xml")
+        .attr("href", "data:image/svg+xml;base64,\n" + btoa(html))
+        .on("mousedown", function(){
+            if(event.button != 2){
+                d3.select(this)
+                    .attr("href", null)
+                    .html("Use right click");
+            }
+        })
+        .on("mouseout", function(){
+            d3.select(this)
+                .html("Download");
+        });
+};
+d3.selectAll('a').style('fill', 'none')
+
+</script>
