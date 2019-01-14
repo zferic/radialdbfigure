@@ -1,4 +1,4 @@
 # radialdbfigure
-Visualization of PROTECT Data Dictionary based on Mkike Bostocks radial tree example.
+Visualization of PROTECT project hierarchy based on Mike Bostocks radial tree example.
 
 ![alt text](https://raw.githubusercontent.com/zferic/radialdbfigure/master/rad_final1162018.png)
